@@ -5,9 +5,9 @@ from __future__ import print_function
 import tensorflow as tf
 
 class AlexNet(object):
-    def __init__(self, is_training, name, log=False):
+    def __init__(self, is_training, name=None, log=False):
         self._is_training = is_training
-        self.name = name
+        self.name = name if name else 'model'
         self.num_classes = 2
         self.log = log
 
