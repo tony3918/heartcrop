@@ -25,6 +25,7 @@ class AlexNet(object):
             output = tf.layers.dense(F2, units=self.num_classes, name='output')
             
             if self.log:
+                print(f'is_training: {self._is_training}')
                 print(f'L1 shape is {L1.get_shape()}')
                 print(f'L2 shape is {L2.get_shape()}')
                 print(f'L3 shape is {L3.get_shape()}')
