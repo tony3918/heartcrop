@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 tf.logging.set_verbosity(tf.logging.INFO)
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0,2"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 DATA_DIR = '/home/user/tony/DATA/np/ct'
 
 def candidate_model_fn(features, labels, mode):
@@ -56,7 +56,7 @@ def candidate_model_fn(features, labels, mode):
 def train(num_patients):
     if not num_patients:
         num_patients = 1
-    images, locs, labels = collect_patches(num_patients)
+    images, locs, labels = collect_patches(num_patients, train=True)
     
     config = tf.estimator.RunConfig(log_step_count_steps=100)
     classifier = tf.estimator.Estimator(model_fn=candidate_model_fn,
@@ -79,7 +79,7 @@ def train(num_patients):
 def test(num_patients):
     if not num_patients:
         num_patients = 1
-    images, locs, labels = collect_patches(num_patients)
+    images, locs, labels = collect_patches(num_patients, train=False)
     
     config = tf.estimator.RunConfig(log_step_count_steps=100)
     classifier = tf.estimator.Estimator(model_fn=candidate_model_fn,
