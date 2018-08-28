@@ -2,6 +2,7 @@ from AlexNet import AlexNet
 from utils import gather_2_5D_data
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 import os, argparse
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -104,11 +105,11 @@ def test(num_patients):
                                                 config=config,
                                                 model_dir="./models/coronal")
 
-        def eval_input_fn(images, labels):
-            return tf.estimator.inputs.numpy_input_fn(x={"x":images},
-                                                      y=labels,
-                                                      num_epochs=1,
-                                                      shuffle=False)
+    def eval_input_fn(images, labels):
+        return tf.estimator.inputs.numpy_input_fn(x={"x":images},
+                                                  y=labels,
+                                                  num_epochs=1,
+                                                  shuffle=False)
 
     results_axial = classifier_axial.evaluate(input_fn=eval_input_fn(test_images_axial, test_labels_axial))
     results_sagital = classifier_sagital.evaluate(input_fn=eval_input_fn(test_images_sagital, test_labels_sagital))
@@ -118,10 +119,43 @@ def test(num_patients):
     print(f'Coronal: {results_coronal}')
 
 
+def predict(num_patients):
+    if not num_patients:
+        num_patients = 1
+    patient_list = sorted(os.listdir(DATA_DIR))[-num_patients:]
+    for patient in patient_list:
+        print(patient)
+    (test_images_axial,
+     test_images_sagital,
+     test_images_coronal) = gather_2_5D_data(patient_list, predicting=True)
+
+    print(f'Test image shape: {test_images_coronal.shape}')
+    print(f'Test image type: {test_images_coronal.dtype}')
+
+    classifier_axial = tf.estimator.Estimator(model_fn=heartcrop_model_fnn,
+                                              model_dir="./models/axial")
+    classifier_sagital = tf.estimator.Estimator(model_fn=heartcrop_model_fnn,
+                                                model_dir="./models/sagital")
+    classifier_coronal = tf.estimator.Estimator(model_fn=heartcrop_model_fnn,
+                                                model_dir="./models/coronal")
+
+    def pred_input_fn(images):
+        return tf.estimator.inputs.numpy_input_fn(x={"x":images},
+                                                  y=None,
+                                                  num_epochs=1,
+                                                  shuffle=False)
+
+    predictions_axial = classifier_axial.predict(input_fn=pred_input_fn(test_images_axial))
+    predictions_sagital = classifier_sagital.predict(input_fn=pred_input_fn(test_images_sagital))
+    predictions_coronal = classifier_coronal.predict(input_fn=pred_input_fn(test_images_coronal))
+    print(predictions_axial.__next__())
+
+
 def main(unused_argv):
     parser = argparse.ArgumentParser(description="Train or Test 2.5D CNN HeartCrop")
     parser.add_argument("-tr", "--train", type=int, default=0, help="train model with n patient's data")
     parser.add_argument("-te", "--test", type=int, default=0, help="test model with n patient's data")
+    parser.add_argument("-pr", "--predict", type=int, default=0, help="predict model with n patient's data")
     args = parser.parse_args()
     print("Started heartcrop_estimator.py")
     if args.train:
@@ -130,7 +164,9 @@ def main(unused_argv):
     if args.test:
         print(f'Will test model on {args.test} patients')
         test(args.train)
-
+    if args.predict:
+        print(f'Will predict ROI on {args.predict} patients')
+        predict(args.predict)
 
 if __name__ == '__main__':
     tf.app.run()
