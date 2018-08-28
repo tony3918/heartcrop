@@ -3,7 +3,6 @@ from utils import gather_2_5D_data
 import tensorflow as tf
 import numpy as np
 import os, argparse
-import matplotlib.pyplot as plt
 
 tf.logging.set_verbosity(tf.logging.INFO)
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -105,11 +104,11 @@ def test(num_patients):
                                                 config=config,
                                                 model_dir="./models/coronal")
 
-    def eval_input_fn(images, labels):
-        return tf.estimator.inputs.numpy_input_fn(x={"x":images},
-                                                  y=labels,
-                                                  num_epochs=1,
-                                                  shuffle=False)
+        def eval_input_fn(images, labels):
+            return tf.estimator.inputs.numpy_input_fn(x={"x":images},
+                                                      y=labels,
+                                                      num_epochs=1,
+                                                      shuffle=False)
 
     results_axial = classifier_axial.evaluate(input_fn=eval_input_fn(test_images_axial, test_labels_axial))
     results_sagital = classifier_sagital.evaluate(input_fn=eval_input_fn(test_images_sagital, test_labels_sagital))
