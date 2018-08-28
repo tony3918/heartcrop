@@ -1,4 +1,3 @@
-from utils import gather_2_5D_data
 from gather_patches import *
 import tensorflow as tf
 import numpy as np
@@ -13,12 +12,18 @@ DATA_DIR = '/home/user/tony/DATA/np/ct'
 def candidate_model_fn(features, labels, mode):
     w = 25
     input_layer = tf.reshape(features["patch"], [-1, w, w, 1])
-    xyz = tf.reshape(features["xyz"], [-1, 3, 1], name='location_features')
+    zyx = tf.reshape(features["zyx"], [-1, 3], name='location_features')
     
     num_conv_layers = (w-1)//2
-    
-    for i in range(1,num_conv_layers):
-        conv = tf.layers.conv2d(inputs=input_layer,
+
+    conv = tf.layers.conv2d(inputs=input_layer,
+                            filters=16,
+                            kernel_size=[3, 3],
+                            padding='valid',
+                            activation=tf.nn.relu,
+                            name='conv_1')
+    for i in range(2,num_conv_layers):
+        conv = tf.layers.conv2d(inputs=conv,
                                 filters=16,
                                 kernel_size=[3,3],
                                 padding='valid',
@@ -30,8 +35,8 @@ def candidate_model_fn(features, labels, mode):
                                 padding='valid',
                                 activation=tf.nn.relu,
                                 name=f'texture_features')
-    
-    fc = tf.concat([xyz, conv], axis=0, name='feature_vector')
+    conv = tf.reshape(conv, [-1, 32])
+    fc = tf.concat([zyx, conv], axis=1, name='feature_vector')
     fc = tf.nn.dropout(fc, 0.5)
     hidden = tf.layers.dense(fc, units=192, activation=tf.nn.relu, name='hidden')
     hidden = tf.nn.dropout(hidden, 0.5)
@@ -61,11 +66,11 @@ def train(num_patients):
     config = tf.estimator.RunConfig(log_step_count_steps=100)
     classifier = tf.estimator.Estimator(model_fn=candidate_model_fn,
                                               config=config,
-                                              model_dir="./model")
+                                              model_dir="./cand_model")
     
     def train_input_fn(images, locs, labels):
         return tf.estimator.inputs.numpy_input_fn(x={"patch":images,
-                                                     "xyz":locs},
+                                                     "zyx":locs},
                                                   y=labels,
                                                   batch_size=128,
                                                   num_epochs=10,
@@ -84,11 +89,11 @@ def test(num_patients):
     config = tf.estimator.RunConfig(log_step_count_steps=100)
     classifier = tf.estimator.Estimator(model_fn=candidate_model_fn,
                                               config=config,
-                                              model_dir="./model")
+                                              model_dir="./cand_model")
     
     def eval_input_fn(images, locs, labels):
         return tf.estimator.inputs.numpy_input_fn(x={"patch":images,
-                                                     "xyz":locs},
+                                                     "zyx":locs},
                                                   y=labels,
                                                   num_epochs=1,
                                                   shuffle=False)
