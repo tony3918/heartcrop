@@ -9,34 +9,47 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="2"
 DATA_DIR = '/home/user/tony/DATA/np/ct'
 
-def candidate_model_fn(features, labels, mode):
-    w = 25
-    input_layer = tf.reshape(features["patch"], [-1, w, w, 1])
-    zyx = tf.reshape(features["zyx"], [-1, 3], name='location_features')
-    
-    num_conv_layers = (w-1)//2
+def DNN(input_, w=25):
+    with tf.variable_scope('DNN', reuse=tf.AUTO_REUSE):
+        num_conv_layers = (w - 1) // 2
 
-    conv = tf.layers.conv2d(inputs=input_layer,
-                            filters=16,
-                            kernel_size=[3, 3],
-                            padding='valid',
-                            activation=tf.nn.relu,
-                            name='conv_1')
-    for i in range(2,num_conv_layers):
-        conv = tf.layers.conv2d(inputs=conv,
+        conv = tf.layers.conv2d(inputs=input_,
                                 filters=16,
-                                kernel_size=[3,3],
+                                kernel_size=[3, 3],
                                 padding='valid',
                                 activation=tf.nn.relu,
-                                name=f'conv_{i}')
-    conv = tf.layers.conv2d(inputs=conv,
+                                name='conv_1')
+        for i in range(2, num_conv_layers):
+            conv = tf.layers.conv2d(inputs=conv,
+                                    filters=16,
+                                    kernel_size=[3, 3],
+                                    padding='valid',
+                                    activation=tf.nn.relu,
+                                    name=f'conv_{i}')
+        conv = tf.layers.conv2d(inputs=conv,
                                 filters=32,
-                                kernel_size=[3,3],
+                                kernel_size=[3, 3],
                                 padding='valid',
                                 activation=tf.nn.relu,
                                 name=f'texture_features')
-    conv = tf.reshape(conv, [-1, 32])
-    fc = tf.concat([zyx, conv], axis=1, name='feature_vector')
+        conv = tf.reshape(conv, [-1, 32])
+    return conv
+
+def candidate_model_fn(features, labels, mode):
+    w=25
+    print(features["patch"].shape)
+    input_axial = tf.reshape(features["patch"][:,0], [-1, w, w, 1], name='axial')
+    print(input_axial.get_shape())
+    input_sagital = tf.reshape(features["patch"][:,2], [-1, w, w, 1], name='sagital')
+    input_coronal = tf.reshape(features["patch"][:,1], [-1, w, w, 1], name='coronal')
+    zyx = tf.reshape(features["zyx"], [-1, 3], name='location_features')
+    
+    output_axial = DNN(input_axial, w=w)
+    output_sagital = DNN(input_sagital, w=w)
+    output_coronal = DNN(input_coronal, w=w)
+
+    fc = tf.concat([zyx, output_axial, output_sagital, output_coronal], axis=1, name='feature_vector')
+    print(fc.get_shape())
     fc = tf.nn.dropout(fc, 0.5)
     hidden = tf.layers.dense(fc, units=192, activation=tf.nn.relu, name='hidden')
     hidden = tf.nn.dropout(hidden, 0.5)
