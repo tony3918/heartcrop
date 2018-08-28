@@ -27,12 +27,11 @@ def collect_patches_from_patient(image, label, w=25):
             for x in range(r, image.shape[2] - r):
                 if x > 30:
                     break
-                patch_images.append(image[z-r:z+r+1,y-r:y+r+1,x])
-                patch_images.append(image[z-r:z+r+1,y,x-r:x+r+1])
-                patch_images.append(image[z,y-r:y+r+1,x-r:x+r+1])
-                for i in range(3):
-                    patch_labels.append(label[z,y,x])
-                    patch_locs.append([z/image.shape[0], y/image.shape[1], x/image.shape[2]])
+                patch_images.append([image[z-r:z+r+1,y-r:y+r+1,x],
+                                     image[z-r:z+r+1,y,x-r:x+r+1],
+                                     image[z,y-r:y+r+1,x-r:x+r+1]])
+                patch_labels.append(label[z,y,x])
+                patch_locs.append([z/image.shape[0], y/image.shape[1], x/image.shape[2]])
     patch_images = np.array(patch_images)
     patch_locs = np.array(patch_locs)
     patch_labels = np.array(patch_labels)
