@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 tf.logging.set_verbosity(tf.logging.INFO)
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0,2"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 DATA_DIR = '/home/user/tony/DATA/np/ct'
 
 def heartcrop_model_fnn(features, labels, mode):
@@ -47,7 +47,7 @@ def train(num_patients):
     patient_list = sorted(os.listdir(DATA_DIR))[:num_patients]
     (train_images_axial, train_labels_axial,
      train_images_sagital, train_labels_sagital,
-     train_images_coronal, train_labels_coronal) = gather_2_5D_data(patient_list, training=False)
+     train_images_coronal, train_labels_coronal) = gather_2_5D_data(patient_list, predicting=False)
 
     print(f'Train image shape: {train_images_coronal.shape}')
     print(f'Train image type: {train_images_coronal.dtype}')
@@ -87,7 +87,7 @@ def test(num_patients):
     patient_list = sorted(os.listdir(DATA_DIR))[-num_patients:]
     (test_images_axial, test_labels_axial,
      test_images_sagital, test_labels_sagital,
-     test_images_coronal, test_labels_coronal) = gather_2_5D_data(patient_list)
+     test_images_coronal, test_labels_coronal) = gather_2_5D_data(patient_list, predicting=False)
 
     print(f'Test image shape: {test_images_coronal.shape}')
     print(f'Test image type: {test_images_coronal.dtype}')

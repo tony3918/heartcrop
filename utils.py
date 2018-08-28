@@ -3,7 +3,7 @@ import os
 
 DATA_DIR = '/home/user/tony/DATA/np/ct'
 
-def gather_2_5D_data(patient_id_list, training=True):
+def gather_2_5D_data(patient_id_list, predicting=False):
     images_axial = []
     images_sagital = []
     images_coronal = []
@@ -16,7 +16,7 @@ def gather_2_5D_data(patient_id_list, training=True):
     images_sagital = np.concatenate([ct for ct in images_sagital]).astype(np.float32)
     images_coronal = np.concatenate([ct for ct in images_coronal]).astype(np.float32)
     
-    if training:
+    if not predicting:
         labels_axial = []
         labels_sagital = []
         labels_coronal = []
