@@ -1,18 +1,16 @@
 import nibabel as nib
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import scipy.ndimage
 
-DATA_DIR = r'E:\HEART_CROP\DATA\raw'
-SAVE_DIR = r'E:\HEART_CROP\DATA\np\mask'
-#mask = nib.load(DATA_DIR).get_fdata()
-#mask = np.transpose(mask)
-#mask = mask[::-1,:,:]
+DATA_DIR = '/home/user/tony/DATA/raw'
+SAVE_DIR = '/home/user/tony/DATA/np/mask'
 
 def save_all_masks(DATA_DIR):
     '''save preprocessed masks for each patient in DATA_DIR'''
     for patient_id in os.listdir(DATA_DIR):
+        if patient_id+'.npy' in os.listdir(SAVE_DIR):
+            continue
         print(f'Saving mask for patient {patient_id}')
         filename = os.listdir(os.path.join(DATA_DIR, patient_id, 'CAC'))[0]
         mask = nib.load(os.path.join(DATA_DIR, patient_id, 'CAC', filename)).get_fdata()
@@ -22,12 +20,12 @@ def save_all_masks(DATA_DIR):
         np.save(os.path.join(SAVE_DIR, f'{patient_id}.npy'), mask)
 
 def preprocessed_mask(original_mask):
-    print(f'original mask shape: {original_mask.shape}')
+    print(f'  original mask shape: {original_mask.shape}')
     mask = resample(original_mask, spacing=np.array([1.0,0.691406,0.691406]), new_spacing=[1.5,1.5,1.5])
-    mask = np.where(mask>=128, 1, 0).astype(np.int8)
-    print(f'shape after resampling: {mask.shape}')
-    mask = zeropad_crop(mask, size=256)
-    print(f'shape after zeropad_crop: {mask.shape}')
+    mask = np.where(mask>=128, 1, 0)
+    print(f'  shape after resampling: {mask.shape}')
+    mask = zeropad_crop(mask, size=256).astype(np.int8)
+    print(f'  shape after zeropad_crop: {mask.shape}')
     return mask
     
 def resample(ct, spacing, new_spacing = [1.5, 1.5, 1.5]):
@@ -71,3 +69,8 @@ def windowing(ct, window_width=350, window_level=50):
     ct = ct - 128
     ct = ct.astype(np.int8)
     return ct
+
+
+if __name__ == '__main__':
+    print(f"Saving all preprocessed masks for each patient in {DATA_DIR}")
+    save_all_masks(DATA_DIR)
