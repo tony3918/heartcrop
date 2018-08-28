@@ -3,7 +3,8 @@ import numpy as np
 
 '''data directory of heart ROI and CAC masks
 structure: (patient_id) -> (image) and (label)'''
-DATA_DIR = '/home/user/tony/DATA/np'
+CT_DIR = '/home/user/tony/DATA/np/ct'
+MASK_DIR = '/home/user/tony/DATA/np/mask'
 
 def crop_roi(image, roi_pos):
     '''image is 3D np.array (either CT or mask)
@@ -18,8 +19,14 @@ def collect_patches_from_patient(image, label, w=25):
     patch_locs = []
     patch_labels = []
     for z in range(r, image.shape[0] - r):
+        if z > 30:
+            break
         for y in range(r, image.shape[1] - r):
+            if y > 30:
+                break
             for x in range(r, image.shape[2] - r):
+                if x > 30:
+                    break
                 patch_images.append(image[z-r:z+r+1,y-r:y+r+1,x])
                 patch_images.append(image[z-r:z+r+1,y,x-r:x+r+1])
                 patch_images.append(image[z,y-r:y+r+1,x-r:x+r+1])
@@ -29,29 +36,37 @@ def collect_patches_from_patient(image, label, w=25):
     patch_images = np.array(patch_images)
     patch_locs = np.array(patch_locs)
     patch_labels = np.array(patch_labels)
-    print(f'patch_images shape: {patch_images.shape}')
-    print(f'patch_locs shape: {patch_locs.shape}')
-    print(f'patch_labels shape: {patch_labels.shape}')
+    print(f'  patch_images shape: {patch_images.shape}')
+    print(f'  patch_locs shape: {patch_locs.shape}')
+    print(f'  patch_labels shape: {patch_labels.shape}')
     return patch_images, patch_locs, patch_labels
     
 def collect_patches(num_patients, train=True):
     if train:
-        patient_list = sorted(os.listdir(DATA_DIR))[:num_patients]
+        patient_list = sorted(os.listdir(CT_DIR))[:num_patients]
     else:
-        patient_list = sorted(os.listdir(DATA_DIR))[-num_patients:]
+        patient_list = sorted(os.listdir(CT_DIR))[-num_patients:]
     
     images, locs, labels = [], [], [] 
     for patient in patient_list:
-        image = np.load(os.path.join(DATA_DIR, patient, 'ct'))
-        label = np.load(os.path.join(DATA_DIR, patient, 'mask'))
+        print(f'Collecting 2D patches from {patient}')
+        image = np.load(os.path.join(CT_DIR, patient))
+        label = np.load(os.path.join(MASK_DIR, patient))
+        print(f'image: {image.shape}, label: {label.shape}')
         patch_images, patch_locs, patch_labels = collect_patches_from_patient(image, label, w=25)
         images.append(patch_images)
         locs.append(patch_locs)
         labels.append(patch_labels)
-    images = np.concatenate([patchset for patchset in images])
-    locs = np.concatenate([patchset for patchset in locs])
-    labels = np.concatenate([patchset for patchset in labels])
+    images = np.concatenate([patchset for patchset in images]).astype(np.float32)
+    locs = np.concatenate([patchset for patchset in locs]).astype(np.float32)
+    labels = np.concatenate([patchset for patchset in labels]).astype(np.int32)
     print(f'images shape: {images.shape}')
     print(f'locs shape: {locs.shape}')
     print(f'labels shape: {labels.shape}')
     return images, locs, labels
+
+if __name__ == '__main__':
+    images, locs, labels = collect_patches(3, train=True)
+    print(f'images: {images.dtype}')
+    print(f'locs: {locs.dtype}')
+    print(f'labels: {labels.dtype}')
